@@ -1,13 +1,842 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>inventario-tarimas</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BF Calculator — Wood Pallet Production</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d0f0e;--surface:#141716;--surface2:#1b1f1d;
+  --border:#2a302d;--accent:#4cff91;--accent-dim:#1a6b3a;
+  --warn:#ffb84c;--danger:#ff4c4c;--text:#d4e0d8;--dim:#6b7d72;--cloud:#7c9cff;
+}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+input::placeholder{color:#354a3d;}
+select option{background:var(--surface2);}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+ 
+/* HEADER */
+.header{background:var(--surface);border-bottom:2px solid var(--accent);padding:10px 18px;display:flex;align-items:center;gap:12;flex-shrink:0;}
+.logo-diamond{width:28px;height:28px;background:var(--accent);clip-path:polygon(0 20%,100% 0%,100% 80%,0% 100%);flex-shrink:0;}
+.header-title{font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.15rem;letter-spacing:.08em;text-transform:uppercase;color:#fff;line-height:1;}
+.header-title span{color:var(--accent);}
+.header-sub{font-size:.6rem;color:var(--dim);}
+.clock{font-family:'Share Tech Mono',monospace;font-size:.8rem;color:var(--accent);margin-left:auto;}
+ 
+/* BUTTONS */
+button{font-family:Barlow Condensed,sans-serif;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;border-radius:3px;transition:all .15s;}
+.btn-primary{background:var(--accent);color:#000;padding:9px 18px;font-size:.85rem;}
+.btn-danger{background:transparent;color:var(--danger);border:1px solid var(--danger);padding:7px 12px;font-size:.75rem;}
+.btn-ghost{background:var(--surface2);color:var(--dim);border:1px solid var(--border);padding:7px 12px;font-size:.75rem;}
+.btn-whatsapp{background:#25D366;color:#fff;padding:9px 18px;font-size:.82rem;}
+.btn-csv{background:#1a3a5c;color:#5bc8f5;border:1px solid #2a5a8c;padding:7px 14px;font-size:.78rem;}
+.btn-cloud{background:#1a2a5c;color:var(--cloud);border:1px solid #2a4a9c;padding:9px 18px;font-size:.82rem;}
+.btn-switch{background:var(--surface2);color:var(--dim);border:1px solid var(--border);padding:5px 10px;font-size:.65rem;}
+button:disabled{opacity:.5;cursor:not-allowed;}
+ 
+/* META BAR */
+.meta-bar{padding:8px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:10px;flex-shrink:0;align-items:flex-end;flex-wrap:wrap;}
+.field-label{font-size:.58rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;font-family:Barlow Condensed,sans-serif;font-weight:700;display:block;margin-bottom:3px;}
+.field-input{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:6px 10px;font-family:'Share Tech Mono',monospace;font-size:.85rem;outline:none;width:100%;}
+ 
+/* STATS */
+.stats-grid{display:grid;gap:1px;background:var(--border);flex-shrink:0;}
+.stat-card{background:var(--surface);padding:12px 14px;}
+.stat-label{font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);}
+.stat-value{font-family:'Share Tech Mono',monospace;font-size:1.3rem;margin-top:2px;}
+.stat-sub{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--dim);}
+ 
+/* TABLE */
+.table-wrap{flex:1;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;}
+thead{position:sticky;top:0;z-index:10;background:var(--surface2);}
+th{padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);border-left:1px solid var(--border);}
+th:first-child{border-left:none;width:30px;font-size:.6rem;color:var(--dim);}
+.th-main{font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.68rem;letter-spacing:.12em;color:var(--text);}
+.th-sub{font-family:Barlow Condensed,sans-serif;font-size:.54rem;color:var(--dim);font-weight:400;}
+td{padding:3px 2px;border-bottom:1px solid #171d1a;border-left:1px solid var(--border);text-align:center;}
+td:first-child{border-left:none;color:var(--dim);font-size:.65rem;padding:2px 4px;}
+tr:nth-child(even){background:var(--surface);}
+tr:hover td{background:#141a17;}
+.del-btn{opacity:0;background:transparent;border:none;color:var(--danger);cursor:pointer;font-size:.9rem;padding:2px 5px;}
+tr:hover .del-btn{opacity:1;}
+.cell-select,.cell-input{width:100%;background:transparent;border:none;outline:none;font-family:'Share Tech Mono',monospace;font-size:.88rem;text-align:center;padding:6px 4px;color:var(--accent);cursor:pointer;appearance:none;-webkit-appearance:none;}
+.cell-input{cursor:text;}
+.cell-dim{color:var(--dim);}
+.cell-warn{color:var(--warn);}
+.add-row-btn{width:100%;background:transparent;border:1px dashed var(--border);color:var(--dim);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;padding:8px;border-radius:2px;}
+.add-row-btn:hover{background:var(--surface2);color:var(--text);}
+.total-row{background:var(--surface2)!important;border-top:2px solid var(--accent);}
+.total-row td{font-family:'Share Tech Mono',monospace;font-weight:bold;padding:10px 8px;}
+ 
+/* ACTION BAR */
+.action-bar{padding:8px 10px;border-top:1px solid var(--border);background:var(--surface);display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;align-items:center;}
+@media(max-width:600px){
+  .action-bar{flex-direction:column;padding:8px;}
+  .action-bar .btn-cloud{width:100%;font-size:1rem;padding:14px;order:-1;margin-bottom:2px;}
+  .action-bar .mobile-row{display:flex;gap:6px;width:100%;}
+  .action-bar .mobile-row button{flex:1;}
+  .action-bar .spacer{display:none;}
+  body{overflow:auto;}
+  .stats-grid{grid-template-columns:repeat(3,1fr)!important;}
+  .stat-value{font-size:1rem!important;}
+  .stat-card{padding:8px 6px!important;}
+}
+ 
+/* TOAST */
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--accent);color:#000;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.85rem;padding:8px 20px;border-radius:3px;z-index:999;transition:transform .3s ease;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.warn{background:var(--warn);}
+ 
+/* VIEWS */
+.view{display:none;flex-direction:column;height:100%;}
+.view.active{display:flex;}
+ 
+/* EMPTY STATE */
+.empty-state{padding:40px;text-align:center;color:var(--dim);}
+.empty-icon{font-size:2.5rem;opacity:.25;margin-bottom:10px;}
+.empty-text{font-family:Barlow Condensed,sans-serif;font-size:.85rem;}
+ 
+/* FILTER BAR */
+.filter-bar{padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;flex-wrap:wrap;}
+ 
+/* COMBO CELL WRAPPER */
+.combo-wrap{display:flex;align-items:center;gap:2px;}
+.back-btn{background:transparent;border:none;color:var(--dim);cursor:pointer;font-size:.7rem;padding:2px 3px;flex-shrink:0;text-transform:none;letter-spacing:0;}
+</style>
+</head>
+<body>
+ 
+<!-- TOAST -->
+<div id="toast"></div>
+ 
+<!-- ═══════════════════════════════════════════ LEAD VIEW -->
+<div class="view active" id="view-lead">
+ 
+  <!-- Header -->
+  <div class="header" style="gap:12px;">
+    <div class="logo-diamond"></div>
+    <div>
+      <div class="header-title">🪵 BF <span>CALCULATOR</span></div>
+      <div class="header-sub">Wood Pallet Production — Lead View</div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+      <div class="clock" id="clock">--:--:--</div>
+      <button class="btn-switch" onclick="switchView('manager')">📊 Manager</button>
+    </div>
+  </div>
+ 
+  <!-- Meta -->
+  <div class="meta-bar">
+    <div style="flex:1;min-width:140px;">
+      <label class="field-label">Lead Name</label>
+      <input id="lead-name" class="field-input" placeholder="e.g. John Smith" style="max-width:220px;">
+    </div>
+    <div>
+      <label class="field-label">Shift</label>
+      <select id="shift-select" class="field-input" style="width:auto;">
+        <option>Morning</option><option>Afternoon</option><option>Night</option>
+      </select>
+    </div>
+  </div>
+ 
+  <!-- Stats -->
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+    <div class="stat-card">
+      <div class="stat-label">Total BF</div>
+      <div class="stat-value" id="stat-bf" style="color:var(--accent);">0.00</div>
+      <div class="stat-sub">board feet produced</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Pieces</div>
+      <div class="stat-value" id="stat-pcs" style="color:var(--warn);">0</div>
+      <div class="stat-sub">pieces this shift</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Status</div>
+      <div class="stat-value" id="stat-status" style="color:var(--dim);font-size:1rem;">⬤ Local</div>
+      <div class="stat-sub" id="stat-status-sub">not yet saved</div>
+    </div>
+  </div>
+ 
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th><div class="th-main">THICKNESS</div><div class="th-sub">select or type</div></th>
+          <th><div class="th-main">WIDTH</div><div class="th-sub">select or type</div></th>
+          <th><div class="th-main">LENGTH</div><div class="th-sub">select or type</div></th>
+          <th><div class="th-main">QUANTITY</div><div class="th-sub"># of pieces</div></th>
+          <th><div class="th-main">BF / PIECE</div><div class="th-sub">auto</div></th>
+          <th><div class="th-main">TOTAL BF</div><div class="th-sub">auto</div></th>
+          <th style="width:28px;border-left:1px solid var(--border);"></th>
+        </tr>
+      </thead>
+      <tbody id="rows-body"></tbody>
+    </table>
+  </div>
+ 
+  <!-- Actions -->
+  <div class="action-bar">
+    <button class="btn-cloud" id="save-btn" onclick="saveToCloud()">☁ Save to Cloud</button>
+    <div class="mobile-row">
+      <button class="btn-whatsapp" onclick="sendWhatsApp()">📱 WhatsApp</button>
+      <button class="btn-csv" onclick="downloadCSV()">⬇ CSV</button>
+      <button class="btn-ghost" onclick="copyReport()">📋</button>
+      <button class="btn-danger" onclick="clearAll()">🗑</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ═══════════════════════════════════════════ MANAGER VIEW -->
+<div class="view" id="view-manager">
+ 
+  <!-- Header -->
+  <div class="header" style="gap:12px;border-bottom-color:var(--warn);">
+    <div class="logo-diamond" style="background:var(--warn);"></div>
+    <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:1.15rem;letter-spacing:.08em;text-transform:uppercase;color:#fff;">
+      📊 MANAGER <span style="color:var(--warn);">DASHBOARD</span>
+      <span style="font-weight:400;font-size:.62rem;color:var(--dim);margin-left:8px;">Daily Production Summary</span>
+    </div>
+    <button class="btn-switch" onclick="switchView('lead')" style="margin-left:auto;">🪵 Lead View</button>
+  </div>
+ 
+  <!-- Mode Tabs -->
+  <div style="background:var(--surface2);border-bottom:1px solid var(--border);display:flex;flex-shrink:0;">
+    <button id="tab-daily" onclick="setMgrMode('daily')" style="flex:1;padding:9px;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;border:none;border-bottom:2px solid var(--warn);background:var(--surface);color:var(--warn);cursor:pointer;">📅 Daily</button>
+    <button id="tab-weekly" onclick="setMgrMode('weekly')" style="flex:1;padding:9px;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;border:none;border-bottom:2px solid transparent;background:var(--surface2);color:var(--dim);cursor:pointer;">📆 Weekly</button>
+    <button id="tab-monthly" onclick="setMgrMode('monthly')" style="flex:1;padding:9px;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;border:none;border-bottom:2px solid transparent;background:var(--surface2);color:var(--dim);cursor:pointer;">🗓 Monthly</button>
+  </div>
+  <!-- Filter -->
+  <div class="filter-bar">
+    <div id="filter-daily">
+      <label class="field-label">Date</label>
+      <input type="date" id="date-filter" class="field-input" style="width:auto;">
+    </div>
+    <div id="filter-weekly" style="display:none;">
+      <label class="field-label">Week of</label>
+      <input type="date" id="week-filter" class="field-input" style="width:auto;">
+    </div>
+    <div id="filter-monthly" style="display:none;">
+      <label class="field-label">Month</label>
+      <input type="month" id="month-filter" class="field-input" style="width:auto;">
+    </div>
+    <button class="btn-cloud" id="load-btn" onclick="loadData()">☁ Load from Cloud</button>
+    <div style="flex:1;"></div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--dim);text-align:right;line-height:1.6;">
+      <span id="mgr-count">0 records</span><br>
+      <span style="color:var(--cloud);">☁ Firebase connected</span>
+    </div>
+  </div>
+ 
+  <!-- Stats -->
+  <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+    <div class="stat-card">
+      <div class="stat-label">Total BF Today</div>
+      <div class="stat-value" id="mgr-bf" style="color:var(--accent);">0.00</div>
+      <div class="stat-sub">board feet</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Pieces</div>
+      <div class="stat-value" id="mgr-pcs" style="color:var(--warn);">0</div>
+      <div class="stat-sub" id="mgr-records">0 records</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Shifts</div>
+      <div class="stat-value" id="mgr-shifts" style="color:var(--text);font-size:1rem;">—</div>
+      <div class="stat-sub" id="mgr-shifts-sub">no data</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Leads</div>
+      <div class="stat-value" id="mgr-leads" style="color:var(--text);font-size:1rem;">—</div>
+      <div class="stat-sub" id="mgr-leads-sub">no data</div>
+    </div>
+  </div>
+ 
+  <!-- Table -->
+  <div class="table-wrap">
+    <div class="empty-state" id="mgr-empty">
+      <div class="empty-icon">☁</div>
+      <div class="empty-text">Select a date and press Load from Cloud</div>
+    </div>
+    <table id="mgr-table" style="display:none;">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th style="text-align:left;"><div class="th-main">SHIFT</div></th>
+          <th style="text-align:left;"><div class="th-main">LEAD</div></th>
+          <th style="text-align:left;"><div class="th-main">THICKNESS</div></th>
+          <th style="text-align:left;"><div class="th-main">WIDTH</div></th>
+          <th style="text-align:left;"><div class="th-main">LENGTH</div></th>
+          <th style="text-align:right;"><div class="th-main">QTY</div></th>
+          <th style="text-align:right;"><div class="th-main">BF/EA</div></th>
+          <th style="text-align:right;"><div class="th-main">TOTAL BF</div></th>
+        </tr>
+      </thead>
+      <tbody id="mgr-body"></tbody>
+    </table>
+  </div>
+ 
+  <!-- Summary (weekly/monthly) -->
+  <div id="summary-wrap" style="display:none;flex:1;overflow-y:auto;">
+    <table style="width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;">
+      <thead><tr style="background:var(--surface2);position:sticky;top:0;">
+        <th style="padding:10px;text-align:left;border-bottom:1px solid var(--border);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.65rem;letter-spacing:.12em;color:var(--dim);">DATE</th>
+        <th style="padding:10px;text-align:left;border-bottom:1px solid var(--border);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.65rem;letter-spacing:.12em;color:var(--dim);">LEAD</th>
+        <th style="padding:10px;text-align:right;border-bottom:1px solid var(--border);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.65rem;letter-spacing:.12em;color:var(--dim);">PIECES</th>
+        <th style="padding:10px;text-align:right;border-bottom:1px solid var(--border);font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.65rem;letter-spacing:.12em;color:var(--dim);">TOTAL BF</th>
+      </tr></thead>
+      <tbody id="summary-body"></tbody>
+    </table>
+  </div>
+  <!-- Actions -->
+  <div class="action-bar">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);flex:1;" id="mgr-footer-info">0 records</div>
+    <button class="btn-csv" onclick="downloadMgrCSV()">⬇ Download CSV</button>
+  </div>
+</div>
+ 
+<!-- ═══════════════════════════════════════════ FIREBASE + LOGIC -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, Timestamp }
+  from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+ 
+// ----------------------------------------
+const app = initializeApp({
+  apiKey: "AIzaSyDPsHCdWSKo_Iwns883QwHxhgGntWSU4Rw",
+  authDomain: "bf-calculator-ef70b.firebaseapp.com",
+  projectId: "bf-calculator-ef70b",
+  storageBucket: "bf-calculator-ef70b.firebasestorage.app",
+  messagingSenderId: "37053629606",
+  appId: "1:37053629606:web:2ae8304f2e84608caca067",
+});
+const db = getFirestore(app);
+window._db = db;
+window._col = collection(db, "production");
+window._fbModules = { addDoc, getDocs, query, where, orderBy, Timestamp };
+ 
+// ----------------------------------------
+window.parseFraction = function(str) {
+  if (!str && str !== 0) return null;
+  str = String(str).trim();
+  if (/^\d+(\.\d+)?$/.test(str)) return parseFloat(str);
+  if (/^\d+\/\d+$/.test(str)) { const [n,d]=str.split("/").map(Number); return n/d; }
+  const m = str.match(/^(\d+)[\s\-](\d+)\/(\d+)$/);
+  if (m) return parseInt(m[1])+parseInt(m[2])/parseInt(m[3]);
+  return null;
+};
+window.calcBF = function(t,w,l,qty) {
+  const tv=parseFraction(t),wv=parseFraction(w),lv=parseFraction(l),qv=parseFloat(qty);
+  if(!tv||!wv||!lv||isNaN(qv)||qv<=0) return null;
+  return {bf:(tv*wv*lv)/144, total:(tv*wv*lv)/144*qv};
+};
+ 
+// ----------------------------------------
+window.saveToCloud = async function() {
+  const rows = window._rows || [];
+  const validos = rows.filter(r=>r.calc);
+  if (!validos.length) { showToast("No data to save","warn"); return; }
+  const lead = document.getElementById("lead-name").value.trim();
+  if (!lead) { showToast("Enter Lead Name first","warn"); return; }
+  const btn = document.getElementById("save-btn");
+  btn.disabled = true; btn.textContent = "⏳ Saving...";
+  try {
+    const date = new Date().toISOString().split("T")[0];
+    const shift = document.getElementById("shift-select").value;
+    const { addDoc, Timestamp } = window._fbModules;
+    await Promise.all(validos.map(r => addDoc(window._col, {
+      date, shift, lead,
+      thickness: r.thickness, width: r.width, length: r.length,
+      qty: parseFloat(r.qty), bfEach: r.calc.bf, totalBF: r.calc.total,
+      createdAt: Timestamp.now(),
+    })));
+    btn.textContent = "☁ Saved!";
+    document.getElementById("stat-status").textContent = "☁ Saved";
+    document.getElementById("stat-status").style.color = "var(--cloud)";
+    document.getElementById("stat-status-sub").textContent = "synced to cloud";
+    showToast(`${validos.length} records saved to cloud`);
+  } catch(e) {
+    showToast("Error saving — check connection","warn");
+    btn.textContent = "☁ Save to Cloud";
+    console.error(e);
+  }
+  btn.disabled = false;
+};
+ 
+// ----------------------------------------
+window.loadFromCloud = async function() {
+  const dateVal = document.getElementById("date-filter").value;
+  if (!dateVal) { showToast("Select a date first","warn"); return; }
+  const btn = document.getElementById("load-btn");
+  btn.disabled = true; btn.textContent = "⏳ Loading...";
+  try {
+    const { getDocs, query, where, orderBy } = window._fbModules;
+    const q = query(window._col, where("date","==",dateVal), orderBy("createdAt","asc"));
+    const snap = await getDocs(q);
+    const data = snap.docs.map(d=>({id:d.id,...d.data()}));
+    window._mgrRecords = data;
+    document.getElementById('summary-wrap').style.display='none';
+    renderMgrTable(data);
+    if (!data.length) showToast("No records for this date","warn");
+    else showToast(`${data.length} records loaded`);
+  } catch(e) {
+    showToast("Error loading — check connection","warn");
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = "☁ Load from Cloud";
+};
+ 
+window.renderMgrTable = function(data) {
+  const totalBF  = data.reduce((s,r)=>s+(r.totalBF||0),0);
+  const totalPcs = data.reduce((s,r)=>s+(r.qty||0),0);
+  const leads    = [...new Set(data.map(r=>r.lead).filter(Boolean))];
+  const shifts   = [...new Set(data.map(r=>r.shift).filter(Boolean))];
+ 
+  document.getElementById("mgr-bf").textContent    = totalBF.toFixed(2);
+  document.getElementById("mgr-pcs").textContent   = totalPcs.toLocaleString();
+  document.getElementById("mgr-records").textContent = `${data.length} records`;
+  document.getElementById("mgr-count").textContent  = `${data.length} records`;
+  document.getElementById("mgr-shifts").textContent = shifts.length || "—";
+  document.getElementById("mgr-shifts-sub").textContent = shifts.join(", ") || "no data";
+  document.getElementById("mgr-leads").textContent  = leads.length || "—";
+  document.getElementById("mgr-leads-sub").textContent  = leads.join(", ") || "no data";
+  document.getElementById("mgr-footer-info").textContent = `${data.length} records · ${document.getElementById("date-filter").value}`;
+ 
+  const tbody = document.getElementById("mgr-body");
+  tbody.innerHTML = "";
+ 
+  if (!data.length) {
+    document.getElementById("mgr-empty").style.display = "block";
+    document.getElementById("mgr-table").style.display = "none";
+    return;
+  }
+  document.getElementById("mgr-empty").style.display = "none";
+  document.getElementById("mgr-table").style.display = "table";
+ 
+  data.forEach((r,i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td style="text-align:left;padding:6px 8px;color:var(--text);">${r.shift||'-'}</td>
+      <td style="text-align:left;padding:6px 8px;color:var(--text);">${r.lead||'-'}</td>
+      <td style="text-align:left;padding:6px 8px;color:var(--text);">${r.thickness||'-'}</td>
+      <td style="text-align:left;padding:6px 8px;color:var(--text);">${r.width||'-'}</td>
+      <td style="text-align:left;padding:6px 8px;color:var(--text);">${r.length||'-'}</td>
+      <td style="text-align:right;padding:6px 8px;color:var(--warn);">${r.qty?.toLocaleString()||0}</td>
+      <td style="text-align:right;padding:6px 8px;color:var(--dim);">${r.bfEach?.toFixed(4)||""}</td>
+      <td style="text-align:right;padding:6px 8px;color:var(--accent);font-weight:bold;">${r.totalBF?.toFixed(2)||""}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+ 
+  // Total row
+  const tr = document.createElement("tr");
+  tr.className = "total-row";
+  tr.innerHTML = `
+    <td colspan="6" style="padding:9px 8px;font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:.72rem;color:var(--dim);">DAILY TOTAL</td>
+    <td style="text-align:right;color:var(--warn);">${totalPcs.toLocaleString()}</td>
+    <td></td>
+    <td style="text-align:right;color:var(--accent);font-size:1rem;">${totalBF.toFixed(2)}</td>
+  `;
+  tbody.appendChild(tr);
+};
+ 
+window.downloadMgrCSV = function() {
+  const data = window._mgrRecords || [];
+  if (!data.length) return;
+  let csv = "Date,Shift,Lead,Thickness,Width,Length,Quantity,BF_each,Total_BF\n";
+  data.forEach(r=>{ csv+=`${r.date},${r.shift},"${r.lead}",${r.thickness},${r.width},${r.length},${r.qty},${r.bfEach?.toFixed(6)||""},${r.totalBF?.toFixed(4)||""}\n`; });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
+  a.download = `production_${document.getElementById("date-filter").value}.csv`;
+  a.click();
+};
+</script>
+ 
+<script>
+// ----------------------------------------
+const THICKNESS = ["1/2","9/16","5/8","3/4","7/8","1-1/8","1-1/4","1-3/8"];
+const WIDTH     = ["3.5","5","5.5"];
+const LENGTH    = ["40","42","44","46","48"];
+ 
+// ----------------------------------------
+setInterval(()=>{ document.getElementById("clock").textContent = new Date().toLocaleTimeString("en-US"); },1000);
+document.getElementById("clock").textContent = new Date().toLocaleTimeString("en-US");
+document.getElementById("date-filter").value = new Date().toISOString().split("T")[0];
+document.getElementById("week-filter").value = new Date().toISOString().split("T")[0];
+document.getElementById("month-filter").value = new Date().toISOString().slice(0,7);
+ 
+// ----------------------------------------
+window._mgrMode = "daily";
+window.setMgrMode = function(mode) {
+  window._mgrMode = mode;
+  ["daily","weekly","monthly"].forEach(m => {
+    const tab = document.getElementById("tab-"+m);
+    const fil = document.getElementById("filter-"+m);
+    const active = m===mode;
+    tab.style.borderBottom = active?"2px solid var(--warn)":"2px solid transparent";
+    tab.style.background = active?"var(--surface)":"var(--surface2)";
+    tab.style.color = active?"var(--warn)":"var(--dim)";
+    if(fil) fil.style.display = active?"block":"none";
+  });
+  // hide both tables when switching
+  document.getElementById("summary-wrap").style.display="none";
+  document.getElementById("mgr-table").style.display="none";
+  document.getElementById("mgr-empty").style.display="block";
+};
+ 
+window.loadData = function() {
+  if(window._mgrMode==="daily") window.loadFromCloud();
+  else if(window._mgrMode==="weekly") window.loadWeekly();
+  else window.loadMonthly();
+};
+ 
+window.loadWeekly = async function() {
+  const startVal = document.getElementById("week-filter").value;
+  if(!startVal){showToast("Select a week","warn");return;}
+  const btn=document.getElementById("load-btn");
+  btn.disabled=true; btn.textContent="⏳ Loading...";
+  try {
+    const {getDocs,query,where,orderBy}=window._fbModules;
+    const start=new Date(startVal+"T00:00:00");
+    const allData=[];
+    for(let i=0;i<7;i++){
+      const d=new Date(start); d.setDate(d.getDate()+i);
+      const dateStr=d.toISOString().split("T")[0];
+      try {
+        const q=query(window._col,where("date","==",dateStr),orderBy("createdAt","asc"));
+        const snap=await getDocs(q);
+        snap.docs.forEach(doc=>allData.push({id:doc.id,...doc.data()}));
+      } catch(e){}
+    }
+    window._mgrRecords=allData;
+    window.renderSummary(allData,"Week of "+startVal);
+    showToast(allData.length+" records loaded");
+  } catch(e){showToast("Error loading","warn");console.error(e);}
+  btn.disabled=false; btn.textContent="☁ Load from Cloud";
+};
+ 
+window.loadMonthly = async function() {
+  const monthVal=document.getElementById("month-filter").value;
+  if(!monthVal){showToast("Select a month","warn");return;}
+  const btn=document.getElementById("load-btn");
+  btn.disabled=true; btn.textContent="⏳ Loading...";
+  try {
+    const {getDocs,query,where,orderBy}=window._fbModules;
+    const [year,month]=monthVal.split("-").map(Number);
+    const daysInMonth=new Date(year,month,0).getDate();
+    const allData=[];
+    for(let d=1;d<=daysInMonth;d++){
+      const dateStr=year+"-"+String(month).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+      try {
+        const q=query(window._col,where("date","==",dateStr),orderBy("createdAt","asc"));
+        const snap=await getDocs(q);
+        snap.docs.forEach(doc=>allData.push({id:doc.id,...doc.data()}));
+      } catch(e){}
+    }
+    window._mgrRecords=allData;
+    window.renderSummary(allData,monthVal);
+    showToast(allData.length+" records for "+monthVal);
+  } catch(e){showToast("Error loading","warn");console.error(e);}
+  btn.disabled=false; btn.textContent="☁ Load from Cloud";
+};
+ 
+window.renderSummary = function(data, label) {
+  document.getElementById("mgr-empty").style.display="none";
+  document.getElementById("mgr-table").style.display="none";
+  document.getElementById("summary-wrap").style.display="block";
+  const byDate={};
+  data.forEach(r=>{
+    if(!byDate[r.date]) byDate[r.date]={bf:0,pcs:0,leads:new Set()};
+    byDate[r.date].bf+=(r.totalBF||0);
+    byDate[r.date].pcs+=(r.qty||0);
+    if(r.lead) byDate[r.date].leads.add(r.lead);
+  });
+  const totalBF=data.reduce((s,r)=>s+(r.totalBF||0),0);
+  const totalPcs=data.reduce((s,r)=>s+(r.qty||0),0);
+  const days=Object.keys(byDate);
+  document.getElementById("mgr-bf").textContent=totalBF.toFixed(2);
+  document.getElementById("mgr-pcs").textContent=totalPcs.toLocaleString();
+  document.getElementById("mgr-records").textContent=days.length+" days";
+  document.getElementById("mgr-count").textContent=data.length+" records";
+  document.getElementById("mgr-footer-info").textContent=label+" - "+days.length+" days · "+data.length+" records";
+  const tbody=document.getElementById("summary-body");
+  tbody.innerHTML="";
+  days.sort().forEach(date=>{
+    const d=byDate[date];
+    const tr=document.createElement("tr");
+    tr.style.borderBottom="1px solid #171d1a";
+    tr.innerHTML=
+      '<td style="padding:10px;color:var(--text);">'+date+'</td>'+
+      '<td style="padding:10px;color:var(--text);font-size:.75rem;">'+([...d.leads].join(", ")||'-')+'</td>'+
+      '<td style="padding:10px;text-align:right;color:var(--warn);">'+d.pcs.toLocaleString()+'</td>'+
+      '<td style="padding:10px;text-align:right;color:var(--accent);font-weight:bold;font-size:.95rem;">'+d.bf.toFixed(2)+'</td>';
+    tbody.appendChild(tr);
+  });
+  const tTotal=document.createElement("tr");
+  tTotal.className="total-row";
+  tTotal.innerHTML=
+    '<td colspan="2" style="padding:10px;font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:.8rem;color:var(--dim);">TOTAL - '+days.length+' days</td>'+
+    '<td style="padding:10px;text-align:right;color:var(--warn);font-weight:bold;">'+totalPcs.toLocaleString()+'</td>'+
+    '<td style="padding:10px;text-align:right;color:var(--accent);font-weight:bold;font-size:1.1rem;">'+totalBF.toFixed(2)+'</td>';
+  tbody.appendChild(tTotal);
+};
+ 
+// ----------------------------------------
+window.switchView = function(v) {
+  document.getElementById("view-lead").classList.toggle("active", v==="lead");
+  document.getElementById("view-manager").classList.toggle("active", v==="manager");
+};
+ 
+// ----------------------------------------
+window.showToast = function(msg, type="ok") {
+  const t = document.getElementById("toast");
+  t.textContent = (type==="ok"?"✓ ":"⚠ ") + msg;
+  t.className = "show" + (type==="warn"?" warn":"");
+  setTimeout(()=>t.className="",2800);
+};
+ 
+// ----------------------------------------
+window._rows = [];
+let rowCounter = 0;
+ 
+function makeRow() {
+  return { id: rowCounter++, thickness:"", width:"", length:"", qty:"", calc:null, mode:{thickness:"select",width:"select",length:"select"} };
+}
+ 
+function initRows(n=8) {
+  window._rows = Array.from({length:n}, makeRow);
+  renderTable();
+}
+ 
+// ----------------------------------------
+function renderTable() {
+  const tbody = document.getElementById("rows-body");
+  tbody.innerHTML = "";
+ 
+  window._rows.forEach((row, ri) => {
+    const tr = document.createElement("tr");
+    tr.dataset.id = row.id;
+ 
+    // Row number
+    const tdNum = document.createElement("td");
+    tdNum.textContent = ri+1;
+    tr.appendChild(tdNum);
+ 
+    // Dimension cells
+    [["thickness",THICKNESS],["width",WIDTH],["length",LENGTH]].forEach(([field, opts])=>{
+      const td = document.createElement("td");
+      td.appendChild(makeComboCell(row, field, opts));
+      tr.appendChild(td);
+    });
+ 
+    // Quantity
+    const tdQty = document.createElement("td");
+    const qtyInput = document.createElement("input");
+    qtyInput.type = "number"; qtyInput.min = "1";
+    qtyInput.className = "cell-input cell-warn";
+    qtyInput.value = row.qty; qtyInput.placeholder = "0";
+    qtyInput.style.color = row.qty ? "var(--warn)" : "var(--dim)";
+    qtyInput.oninput = e => {
+      row.qty = e.target.value;
+      e.target.style.color = row.qty ? "var(--warn)" : "var(--dim)";
+      recalcRow(row); updateRow(row.id);
+    };
+    qtyInput.onkeydown = e => { if(e.key==="Enter"||e.key==="Tab"){e.preventDefault();focusNext(row.id,"qty");} };
+    qtyInput.dataset.field = "qty"; qtyInput.dataset.rowid = row.id;
+    tdQty.appendChild(qtyInput); tr.appendChild(tdQty);
+ 
+    // BF/piece
+    const tdBfEa = document.createElement("td");
+    tdBfEa.className = "cell-dim"; tdBfEa.dataset.bfea = row.id;
+    tdBfEa.style.fontSize = ".78rem";
+    tdBfEa.textContent = row.calc ? row.calc.bf.toFixed(4) : "—";
+    tr.appendChild(tdBfEa);
+ 
+    // Total BF
+    const tdBf = document.createElement("td");
+    tdBf.style.cssText = "text-align:right;padding-right:10px;font-weight:bold;font-size:.9rem;";
+    tdBf.style.color = row.calc ? "var(--accent)" : "#252d29";
+    tdBf.dataset.bf = row.id;
+    tdBf.textContent = row.calc ? row.calc.total.toFixed(2) : "—";
+    tr.appendChild(tdBf);
+ 
+    // Delete
+    const tdDel = document.createElement("td");
+    tdDel.style.cssText = "text-align:center;padding:2px 4px;border-left:1px solid var(--border);";
+    if (row.thickness||row.width||row.length||row.qty) {
+      const delBtn = document.createElement("button");
+      delBtn.className = "del-btn"; delBtn.textContent = "✕";
+      delBtn.onclick = () => { window._rows = window._rows.filter(r=>r.id!==row.id); renderTable(); updateStats(); };
+      tdDel.appendChild(delBtn);
+    }
+    tr.appendChild(tdDel);
+    tbody.appendChild(tr);
+  });
+ 
+  // Add row button
+  const trAdd = document.createElement("tr");
+  const tdAdd = document.createElement("td"); tdAdd.colSpan = 8; tdAdd.style.padding = "4px 6px";
+  const addBtn = document.createElement("button"); addBtn.className = "add-row-btn"; addBtn.textContent = "+ Add Row";
+  addBtn.onclick = () => { window._rows.push(makeRow()); renderTable(); updateStats(); };
+  tdAdd.appendChild(addBtn); trAdd.appendChild(tdAdd); tbody.appendChild(trAdd);
+ 
+  // Total row
+  const validos = window._rows.filter(r=>r.calc);
+  if (validos.length) {
+    const totalBF  = validos.reduce((s,r)=>s+r.calc.total,0);
+    const totalPcs = validos.reduce((s,r)=>s+parseFloat(r.qty),0);
+    const trTotal = document.createElement("tr"); trTotal.className = "total-row";
+    trTotal.innerHTML = `
+      <td colspan="4" style="padding:10px 12px;font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:.8rem;letter-spacing:.12em;color:var(--dim);">SHIFT TOTALS</td>
+      <td style="text-align:center;color:var(--warn);">${totalPcs.toLocaleString("en-US")} pcs</td>
+      <td></td>
+      <td style="text-align:right;padding-right:10px;color:var(--accent);font-size:1.15rem;">${totalBF.toFixed(2)}</td>
+      <td></td>
+    `;
+    tbody.appendChild(trTotal);
+  }
+  updateStats();
+}
+ 
+function makeComboCell(row, field, opts) {
+  const wrap = document.createElement("div"); wrap.className = "combo-wrap";
+ 
+  if (row.mode[field] === "type") {
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.className = "cell-input";
+    inp.value = row[field]; inp.placeholder = field;
+    inp.style.color = row[field] ? "var(--accent)" : "var(--dim)";
+    inp.oninput = e => { row[field]=e.target.value; inp.style.color=row[field]?"var(--accent)":"var(--dim)"; recalcRow(row); updateRowBF(row); updateStats(); };
+    inp.onkeydown = e => {
+      if(e.key==="Enter"||e.key==="Tab"){e.preventDefault();focusNext(row.id,field);}
+      if(e.key==="Escape"){row.mode[field]="select";row[field]="";renderTable();}
+    };
+    inp.dataset.field=field; inp.dataset.rowid=row.id;
+    wrap.appendChild(inp);
+    const back = document.createElement("button"); back.className="back-btn"; back.textContent="≡"; back.title="Back to list";
+    back.onclick=()=>{row.mode[field]="select";row[field]="";recalcRow(row);renderTable();updateStats();};
+    wrap.appendChild(back);
+  } else {
+    const sel = document.createElement("select"); sel.className = "cell-select";
+    sel.style.color = row[field] ? "var(--accent)" : "var(--dim)";
+    const blankOpt = document.createElement("option"); blankOpt.value=""; blankOpt.textContent=field; sel.appendChild(blankOpt);
+    opts.forEach(o=>{ const op=document.createElement("option"); op.value=o; op.textContent=o; if(row[field]===o) op.selected=true; sel.appendChild(op); });
+    const custOpt = document.createElement("option"); custOpt.value="__custom__"; custOpt.textContent="✏ Other size..."; custOpt.style.color="var(--warn)"; sel.appendChild(custOpt);
+    sel.onchange = e => {
+      if(e.target.value==="__custom__"){row.mode[field]="type";row[field]="";renderTable();setTimeout(()=>{const el=document.querySelector(`[data-field="${field}"][data-rowid="${row.id}"]`);el&&el.focus();},30);return;}
+      row[field]=e.target.value; sel.style.color=row[field]?"var(--accent)":"var(--dim)";
+      recalcRow(row); updateRowBF(row); updateStats();
+      if(row[field]) setTimeout(()=>focusNext(row.id,field),30);
+    };
+    sel.dataset.field=field; sel.dataset.rowid=row.id;
+    wrap.appendChild(sel);
+  }
+  return wrap;
+}
+ 
+function recalcRow(row) {
+  row.calc = window.calcBF ? window.calcBF(row.thickness,row.width,row.length,row.qty) : null;
+}
+ 
+function updateRowBF(row) {
+  const bfEaEl = document.querySelector(`[data-bfea="${row.id}"]`);
+  const bfEl   = document.querySelector(`[data-bf="${row.id}"]`);
+  if (bfEaEl) bfEaEl.textContent = row.calc ? row.calc.bf.toFixed(4) : "—";
+  if (bfEl)   { bfEl.textContent = row.calc ? row.calc.total.toFixed(2) : "—"; bfEl.style.color = row.calc ? "var(--accent)" : "#252d29"; }
+}
+ 
+function updateRow(rowId) { updateRowBF(window._rows.find(r=>r.id===rowId)); updateStats(); }
+ 
+function updateStats() {
+  const validos  = window._rows.filter(r=>r.calc);
+  const totalBF  = validos.reduce((s,r)=>s+r.calc.total,0);
+  const totalPcs = validos.reduce((s,r)=>s+parseFloat(r.qty),0);
+  document.getElementById("stat-bf").textContent  = totalBF.toFixed(2);
+  document.getElementById("stat-pcs").textContent = totalPcs.toLocaleString("en-US");
+}
+ 
+const FIELDS = ["thickness","width","length","qty"];
+function focusNext(rowId, field) {
+  const fi = FIELDS.indexOf(field);
+  const ri = window._rows.findIndex(r=>r.id===rowId);
+  if (fi < FIELDS.length-1) {
+    const nextField = FIELDS[fi+1];
+    const el = document.querySelector(`[data-field="${nextField}"][data-rowid="${rowId}"]`);
+    if (el) el.focus();
+  } else {
+    let nextRow = window._rows[ri+1];
+    if (!nextRow) { nextRow = makeRow(); window._rows.push(nextRow); renderTable(); }
+    setTimeout(()=>{ const el=document.querySelector(`[data-field="thickness"][data-rowid="${nextRow.id}"]`); el&&el.focus(); },50);
+  }
+}
+ 
+// ----------------------------------------
+window.clearAll = function() {
+  initRows(8);
+  const btn=document.getElementById("save-btn"); btn.textContent="☁ Save to Cloud";
+  document.getElementById("stat-status").textContent="⬤ Local"; document.getElementById("stat-status").style.color="var(--dim)";
+  document.getElementById("stat-status-sub").textContent="not yet saved";
+};
+ 
+function getValidos() { return window._rows.filter(r=>r.calc); }
+ 
+function buildReport() {
+  const fecha=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  const shift=document.getElementById("shift-select").value;
+  const lead=document.getElementById("lead-name").value;
+  const validos=getValidos();
+  const totalBF=validos.reduce((s,r)=>s+r.calc.total,0);
+  const totalPcs=validos.reduce((s,r)=>s+parseFloat(r.qty),0);
+  let txt=`📦 PRODUCTION REPORT\n📅 ${fecha}\n⏱ Shift: ${shift}\n`;
+  if(lead) txt+=`👷 Lead: ${lead}\n`;
+  txt+=`--------------------------------\n`;
+  validos.forEach(r=>{ const dim=`${r.thickness}x${r.width}x${r.length}`; txt+=`${dim.padEnd(16)} ${String(Math.round(r.qty)).padStart(5)} pcs = ${r.calc.total.toFixed(2)} BF\n`; });
+  txt+=`--------------------------------\nTOTAL PIECES: ${totalPcs.toLocaleString("en-US")}\nTOTAL BF: ${totalBF.toFixed(2)}\n`;
+  return txt;
+}
+ 
+window.sendWhatsApp = function() {
+  const v=getValidos(); if(!v.length){showToast("No data to send","warn");return;}
+  window.open(`https://wa.me/?text=${encodeURIComponent(buildReport())}`,"_blank");
+};
+ 
+window.copyReport = function() {
+  const v=getValidos(); if(!v.length){showToast("No data to copy","warn");return;}
+  const text=buildReport();
+  if(navigator.clipboard?.writeText){ navigator.clipboard.writeText(text).then(()=>showToast("Report copied")).catch(()=>fbCopy(text)); }
+  else fbCopy(text);
+};
+ 
+function fbCopy(text) {
+  const ta=document.createElement("textarea"); ta.value=text; ta.style.cssText="position:fixed;top:-9999px;left:-9999px;opacity:0;";
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{document.execCommand("copy");showToast("Report copied");}catch{showToast("Use WhatsApp to share","warn");}
+  document.body.removeChild(ta);
+}
+ 
+window.downloadCSV = function() {
+  const v=getValidos(); if(!v.length) return;
+  const fecha=new Date().toLocaleDateString("en-US"); const shift=document.getElementById("shift-select").value; const lead=document.getElementById("lead-name").value;
+  let csv="Date,Shift,Lead,Thickness,Width,Length,Quantity,BF_each,Total_BF\n";
+  v.forEach(r=>{ csv+=`${fecha},${shift},"${lead}",${r.thickness},${r.width},${r.length},${r.qty},${r.calc.bf.toFixed(6)},${r.calc.total.toFixed(4)}\n`; });
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
+  a.download=`production_${fecha.replace(/\//g,"-")}_${shift}.csv`; a.click();
+};
+ 
+// ----------------------------------------
+initRows(8);
+</script>
+</body>
 </html>
+ 
+
+  
+  
+ 
